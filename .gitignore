@@ -1,0 +1,56 @@
+# --- Go build artifacts ---
+/bin/
+/build/
+/dist/
+/out/
+/tmp/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# --- Coverage & profiling ---
+*.cover
+*.cov
+*.lcov
+coverage.*
+coverage/
+cover.out
+profile.out
+*.prof
+*.pprof
+
+# --- Logs ---
+*.log
+logs/
+*.pid
+
+# --- Dependencies ---
+# Keep go.mod and go.sum tracked!
+# Uncomment the next line if you never commit vendored deps:
+# /vendor/
+
+# --- Go workspace files ---
+# Uncomment if your go.work is local-only
+# go.work
+# go.work.sum
+
+# --- Editor/OS cruft ---
+.idea/
+.vscode/
+*.iml
+*.swp
+*~
+.DS_Store
+Thumbs.db
+
+# --- Env / secrets (adjust as needed) ---
+.env
+.env.*
+
+# Testdata
+
+test.go

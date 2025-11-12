@@ -17,13 +17,14 @@ import (
 )
 
 type Client struct {
-	APIKey  string
-	Timeout time.Duration
-	http    *http.Client
+	apiBaseURL string
+	APIKey     string
+	Timeout    time.Duration
+	http       *http.Client
 }
 
 const (
-	APIBaseURL                   = "https://smtp.maileroo.com/api/v2/"
+	DefaultAPIBaseURL            = "https://smtp.maileroo.com/api/v2/"
 	MaxAssociativeMapKeyLength   = 128
 	MaxAssociativeMapValueLength = 768
 	MaxSubjectLength             = 255
@@ -114,8 +115,22 @@ type BasePayload struct {
 	ReferenceID *string
 }
 
-func NewClient(apiKey string, timeoutSeconds int) (*Client, error) {
+type ClientOption func(*Client) error
 
+func WithAPIBaseURL(url string) ClientOption {
+	return func(c *Client) error {
+		if strings.TrimSpace(url) == "" {
+			return errors.New("API base URL must be a non-empty string")
+		}
+		if !strings.HasSuffix(url, "/") {
+			url = url + "/"
+		}
+		c.apiBaseURL = url
+		return nil
+	}
+}
+
+func NewClient(apiKey string, timeoutSeconds int, opts ...ClientOption) (*Client, error) {
 	if strings.TrimSpace(apiKey) == "" {
 		return nil, errors.New("API key must be a non-empty string")
 	}
@@ -124,13 +139,22 @@ func NewClient(apiKey string, timeoutSeconds int) (*Client, error) {
 		return nil, errors.New("timeout must be a positive integer")
 	}
 
-	return &Client{
-		APIKey:  apiKey,
-		Timeout: time.Duration(timeoutSeconds) * time.Second,
+	client := &Client{
+		apiBaseURL: DefaultAPIBaseURL,
+		APIKey:     apiKey,
+		Timeout:    time.Duration(timeoutSeconds) * time.Second,
 		http: &http.Client{
 			Timeout: time.Duration(timeoutSeconds) * time.Second,
 		},
-	}, nil
+	}
+
+	for _, opt := range opts {
+		if err := opt(client); err != nil {
+			return nil, err
+		}
+	}
+
+	return client, nil
 
 }
 
@@ -605,7 +629,7 @@ func (c *Client) normalizeBulkMessages(in []BulkMessage) ([]map[string]any, erro
 func (c *Client) sendRequest(ctx context.Context, method, endpoint string, body any, out any) error {
 
 	if !strings.HasPrefix(endpoint, "http") {
-		endpoint = APIBaseURL + strings.TrimLeft(endpoint, "/")
+		endpoint = c.apiBaseURL + strings.TrimLeft(endpoint, "/")
 	}
 
 	var r io.Reader
